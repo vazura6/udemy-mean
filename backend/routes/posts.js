@@ -29,27 +29,40 @@ const storage = multer.diskStorage({
 });
 
 router.post("", multer({storage: storage}).single("image"), (req, res, next) => {
-
+  const url = req.protocol + '://' + req.get("host");
   const post = new Post({
     title: req.body.title,
-    content: req.body.content
+    content: req.body.content,
+    imagePath: url + "/images/" + req.file.filename
     }
   );
-  console.log(post);
   post.save()
     .then(createdPost => {
       res.status(201).json({
         message: "Post added successfully!",
-        postId: createdPost._id
+        post: {
+            ...createdPost,
+            id: createdPost._id
+        }
       });
     });
 });
 
-router.put("/:id", (req, res, next) => {
-  const post = new Post({
-    _id: req.body.id,
-    title: req.body.title,
-    content: req.body.content
+router.put(
+    "/:id",
+    multer({storage: storage}).single("image"),
+    (req, res, next) => {
+      let imagePath = req.body.imagePath;
+      if (req.file) {
+        const url = req.protocol + '://' + req.get("host");
+          imagePath = url + "/images/" + req.file.filename;
+      };
+      console.log(req.file);
+      const post = new Post({
+        _id: req.body.id,
+        title: req.body.title,
+        content: req.body.content,
+        imagePath: imagePath
   });
   Post.updateOne({_id: req.params.id}, post).then(result => {
     res.status(200).json({message: "Updated!!"});
